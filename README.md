@@ -1,0 +1,1 @@
+# aws-login-helper-firefox
