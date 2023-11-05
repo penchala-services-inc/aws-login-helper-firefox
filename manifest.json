@@ -1,0 +1,36 @@
+{
+  "manifest_version": 2,
+  "description": "Enhances AWS Login Experience.",
+  "homepage_url": "https://github.com/penchala-services-inc/aws-login-helper-firefox",
+  "author": "Pechala Services Inc.",
+  "name": "AWS Login Helper",
+  "version": "1.0",
+  "permissions": ["cookies","<all_urls>","activeTab", "storage", "contextualIdentities"],
+  
+  "content_scripts": [
+    {
+      "matches": ["*://*.awsapps.com/*","*://*.console.aws.amazon.com/*"],
+      "js": ["content.js"]
+    }
+  ],
+  "web_accessible_resources": [
+    "static/js/bootstrap-3.3.7.min.js"
+  ],
+  "browser_action": {
+    "browser_style": true,
+    "default_title": "AWS Login Helper",
+    "default_icon": {
+      "32": "icons/icon32.png",
+      "64": "icons/icon64.png",
+      "128": "icons/icon128.png"
+    }
+  },
+  "icons": {
+    "32": "icons/icon32.png",
+    "64": "icons/icon64.png",
+    "128": "icons/icon128.png"
+  },
+  "background": {
+    "scripts": ["background.js"]
+  }
+}
