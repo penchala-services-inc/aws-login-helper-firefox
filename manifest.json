@@ -4,7 +4,7 @@
   "homepage_url": "https://github.com/penchala-services-inc/aws-login-helper-firefox",
   "author": "Pechala Services Inc.",
   "name": "AWS Login Helper",
-  "version": "1.0",
+  "version": "1.0.1",
   "permissions": ["cookies","*://*.awsapps.com/*","*://*.console.aws.amazon.com/*","activeTab", "storage", "contextualIdentities"],
   
   "content_scripts": [
