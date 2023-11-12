@@ -5,7 +5,7 @@
   "author": "Pechala Services Inc.",
   "name": "AWS Login Helper",
   "version": "1.0",
-  "permissions": ["cookies","<all_urls>","activeTab", "storage", "contextualIdentities"],
+  "permissions": ["cookies","*://*.awsapps.com/*","*://*.console.aws.amazon.com/*","activeTab", "storage", "contextualIdentities"],
   
   "content_scripts": [
     {
