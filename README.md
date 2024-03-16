@@ -6,6 +6,10 @@ Say goodbye to repetitive logins; simply log in once to the AWS IAM Identity Cen
 
 The extension offers several other features to streamline your AWS Console Experience:
 
+# Privacy & Security
+
+We take the privacy and security of our users very seriously. This extension does not store or leak any information. All the code is open source, and you can verify that.
+
 # Inspiration
 
 This project is inspired by [cookie-quick-manager](https://github.com/ysard/cookie-quick-manager/).
@@ -62,10 +66,6 @@ We are continuously working to improve AWS Login Helper. Here are some enhanceme
 # Feedback and Contributions
 
 We welcome your feedback and contributions to improve AWS Login Helper. If you encounter any issues, have ideas for enhancements, or want to contribute to the development, please visit our GitHub repository.
-
-# Privacy
-
-This addon does not store or leak any personal information.
 
 # License
 [GPLv3](./LICENSE).
