@@ -8,48 +8,14 @@ const linksInfo = new Set();
 const processedLinks = new Set(); // Keep track of processed links
 // Set debug flag
 const IsDebug = false;
+authenticationComplete = false;
+cookiesCopied = false
 
 // Function to create links from recent entries in storage
 async function createLinksFromStorageEntries() {
   try {
     // Wait for the DOM to fully load
-    
-      // Check if the recent logins container already exists in the DOM
-      let parentContainer = document.querySelector('.recent-logins-container');
-      if (!parentContainer) {
-        // Create a parent container for recent logins if it doesn't exist
-        parentContainer = document.createElement('div');
-        parentContainer.className = 'recent-logins-container';
-        
-        // Instead of appending, prepend the container to the body
-        document.body.prepend(parentContainer);
-
-        // Apply CSS styles to center-align the container
-        parentContainer.style.display = 'flex';
-        parentContainer.style.flexDirection = 'column';
-        parentContainer.style.alignItems = 'center'; // Center-align the content
-        parentContainer.style.paddingTop = '10px'; // Add padding at the top
-
-        // Create and append the recent logins text
-        const recentLoginsText = document.createElement('div');
-        recentLoginsText.textContent = 'Recent Logins:';
-        recentLoginsText.style.fontWeight = 'bold'; // Set the text to bold
-        recentLoginsText.style.fontSize = '16px'; // Increase font size
-        parentContainer.appendChild(recentLoginsText);
-
-        // Create a solid line separator
-        const separator = document.createElement('hr');
-        separator.style.marginTop = '5px'; // Add some margin at the top
-        separator.style.marginBottom = '10px'; // Add some margin at the bottom
-        separator.style.width = '100%'; // Set the width to 100%
-        separator.style.border = 'none'; // Remove the default border
-        separator.style.borderTop = '1px solid black'; // Add a solid line
-        parentContainer.appendChild(separator);
-      } else {
-        console.log('Recent logins container already exists in the DOM.');
-        return;
-      }
-      
+          
       // Retrieve recent entries from storage
       const { recentfivelogins: recentEntries = [] } = await browser.storage.local.get('recentfivelogins');
 
@@ -58,6 +24,44 @@ async function createLinksFromStorageEntries() {
         console.log('No recent entries found in storage.');
         return;
       }
+       // Check if the recent logins container already exists in the DOM
+       let parentContainer = document.querySelector('.recent-logins-container');
+       if (!parentContainer) {
+         // Create a parent container for recent logins if it doesn't exist
+         parentContainer = document.createElement('div');
+         parentContainer.className = 'recent-logins-container';
+         
+         // Instead of appending, prepend the container to the body
+         document.body.prepend(parentContainer);
+ 
+         // Apply CSS styles to center-align the container
+         parentContainer.style.display = 'flex';
+         parentContainer.style.flexDirection = 'column';
+         parentContainer.style.alignItems = 'center'; // Center-align the content
+         parentContainer.style.paddingTop = '10px'; // Add padding at the top
+         
+ 
+         // Create and append the recent logins text
+         const recentLoginsText = document.createElement('div');
+         recentLoginsText.textContent = 'Recent Logins:';
+         recentLoginsText.style.fontWeight = 'bold'; // Set the text to bold
+         recentLoginsText.style.fontSize = '16px'; // Increase font size
+         recentLoginsText.style.fontFamily = 'Amazon Ember';
+         parentContainer.appendChild(recentLoginsText);
+ 
+         // Create a solid line separator
+         const separator = document.createElement('hr');
+         separator.style.marginTop = '5px'; // Add some margin at the top
+         separator.style.marginBottom = '10px'; // Add some margin at the bottom
+         separator.style.width = '100%'; // Set the width to 100%
+         separator.style.border = 'none'; // Remove the default border
+         separator.style.borderTop = '1px solid black'; // Add a solid line
+         
+         parentContainer.appendChild(separator);
+       } else {
+         console.log('Recent logins container already exists in the DOM.');
+         return;
+       }
 
       // Select the parent element where links will be inserted
       let parentElement = parentContainer.querySelector('.recent-links');
@@ -109,33 +113,60 @@ async function createLinksFromStorageEntries() {
 
         // Add a line break after each link
         parentElement.appendChild(document.createElement('br'));
-        parentElement.appendChild(document.createElement('br'));
+        //parentElement.appendChild(document.createElement('br'));
+
 
         console.log(`Created link for ${account_name} (${account_id})`);
       });
 
     // // Add a bordered rectangle with a tip message
-    //   const tipContainer = document.createElement('div');
-    //   tipContainer.style.border = '1px solid orange'; // Thin orange border
-    //   tipContainer.style.padding = '5px';
-    //   tipContainer.style.marginTop = '10px'; // Add margin at the top
-    //   tipContainer.style.fontSize = '14px'; // Increase font size
+      const privacyContainer = document.createElement('div');
+      privacyContainer.style.border = '1px solid orange'; // Thin orange border
+      privacyContainer.style.padding = '5px';
+      privacyContainer.style.marginTop = '5px'; // Add margin at the top
+      privacyContainer.style.fontSize = '14px'; // Increase font size
+      privacyContainer.style.fontFamily = 'Amazon Ember';
 
-    //   tipContainer.textContent = 'Tip: When your console pages expire (console.aws.amazon.com), come to this IIC page, re-login by refreshing/reloading, and go back to the console page. '
-    //   +'\n\r'+ 'Then, hit the reload button to continue what you are doing without reopening everything again.';
+      privacyContainer.textContent = 'Privacy Notice: By using this addon/extension (AWS Login Helper), you agree to its function of copying cookies from the awsapps.com domain to different containers in your browser. Rest assured, your information remains secure and is not leaked or copied elsewhere.';
       
-    //   parentContainer.appendChild(tipContainer);
+      parentContainer.appendChild(privacyContainer);
 
-    // // Add a line break after the tip container
-    // parentContainer.appendChild(document.createElement('br'));
-    // parentContainer.appendChild(document.createElement('br'));
+      const tipContainer = document.createElement('div');
+    //Add a line break after the tip container
     parentContainer.appendChild(document.createElement('br'));
+    parentContainer.appendChild(document.createElement('br'));
+    parentContainer.appendChild(document.createElement('br'));
+
+    tipContainer.style.border = '1px solid orange'; // Thin orange border
+    tipContainer.style.padding = '5px';
+    tipContainer.style.marginTop = '5px'; // Add margin at the top
+    tipContainer.style.fontSize = '14px'; // Increase font size
+    tipContainer.style.fontFamily = 'Amazon Ember';
+
+    tipContainer.textContent = 'Tip: When your console pages expire (console.aws.amazon.com), come to this IIC page, re-login by refreshing/reloading, and go back to the console page. '
+    +'\n\r'+ 'Then, hit the reload button to continue what you are doing without reopening everything again.';
+    
+    parentContainer.appendChild(tipContainer);
+
+  // Add a line break after the tip container
+  parentContainer.appendChild(document.createElement('br'));
+  parentContainer.appendChild(document.createElement('br'));
+  parentContainer.appendChild(document.createElement('br'));
     // Add the parentContainer as a child of the specified class
    // Add the parentContainer as a child of the specified ID
     let targetDiv = document.getElementById('awsui-tabs-43-1710532311807-680-accounts-panel');
     if (targetDiv) {
         targetDiv.appendChild(parentContainer);
-    } else {
+    }
+    else if (!targetDiv) {
+        targetDiv = document.getElementById('awsui_tabs-tab-label_14rmt_1ojt0_257');
+        if (targetDiv) {
+            targetDiv.appendChild(parentContainer);
+        } else {
+            console.warn('Target div not found.');
+        }
+      }
+    else {
         console.warn('Target div not found.');
     }
 
@@ -145,7 +176,7 @@ async function createLinksFromStorageEntries() {
   }
 }
 
-function extractLinksWithClass() {
+function extractLoginLinks_And_Add_Tab_And_Window_Urls() {
   addingTabandWindowLinks = true;
   const elementsWithClass = document.querySelectorAll('a[href^="#/console?account_id="][href*="&role_name="]');
   if (IsDebug) console.log('Elements with matching href pattern:', elementsWithClass);
@@ -305,15 +336,34 @@ function cleanAndDecodeContainerName(name) {
   }
   // Callback function for the MutationObserver
   function handleMutations(mutationsList, observer) {
+    if (IsDebug) console.log(' handleMutations url '  + window.location.href);
     if (IsDebug) console.log('Mutation observed:', mutationsList.length);
     if (IsDebug) console.log('mutationsList : ');
     if (IsDebug) console.log(mutationsList);
+
+    //we want to wait until the authentication is done before copying cookies
+    if(window.location.href.includes('.awsapps.com/start/#/workflowResultHandle'))
+    {
+      authenticationComplete = true;
+    }
+    if(window.location.href.includes('.awsapps.com/start/#/') && !window.location.href.includes('.awsapps.com/start/#/workflowResultHandle') && authenticationComplete && cookiesCopied == false){
+      
+      
+      browser.runtime.sendMessage({ action: 'copyCookiesToAllContainers' });
+
+      if (IsDebug) console.log('copyCookiesToAllContainers message sent.');
+      
+      browser.runtime.sendMessage({ action: 'saveCookieExpiration' });
+      cookiesCopied = true;
+    }
+
     for (const mutation of mutationsList) {
       if (IsDebug) console.log('mutation.target.classList : ' + mutation.target.classList);
       if (mutation.target.classList.contains('ZA2Ih29gQPWWy47dDhuE')) {
         if (IsDebug) console.log('Account Role mutation observed.');
+        console.log(' handleMutations Account Role mutation url '  + window.location.href);
         if (addingTabandWindowLinks === false)
-          extractLinksWithClass();
+          extractLoginLinks_And_Add_Tab_And_Window_Urls();
         if (IsDebug) console.log('Links:', links.size);
       } else if (mutationsList.length == 1 && mutation.target.classList.contains('stw1bkrahhh9wPMNiZKU')) {
         if (IsDebug) console.log('Account Collapse mutation observed.');
@@ -323,48 +373,11 @@ function cleanAndDecodeContainerName(name) {
       }
     }
   }
-  
-
-// Function to compare cookie expiration timestamps and prompt the user if they are different
-function compareAndPromptForRefresh() {
-  try {
-    console.log('Invocation counter:', invocationCounter);
-    // Send a message to background.js to request currentCookieExpirationDateTimeEpoch
-    const response = browser.runtime.sendMessage({ action: 'getCurrentCookieExpirationDateTimeEpoch' });
-    const currentCookieExpirationDateTimeEpoch = response.currentCookieExpirationDateTimeEpoch;
-    console.log('Current cookie expiration datetime from background:', currentCookieExpirationDateTimeEpoch);
-
-    // Get the stored cookie expiration timestamp from storage
-    const storageData = browser.storage.local.get('cookieExpirationDateTimeEpoch');
-    const storedCookieExpirationTimestamp = storageData.cookieExpirationDateTimeEpoch || 0;
-
-    // If the stored timestamp is different from the current timestamp
-    if (currentCookieExpirationDateTimeEpoch !== storedCookieExpirationTimestamp) {
-      // Prompt the user for confirmation
-      if (window.confirm('The session has expired. Do you want to refresh any open console page tabs?')) {
-        // If the user confirms, refresh tabs with ".console.aws.amazon.com" in the URL
-        const tabsToRefresh = browser.tabs.query({ url: '*://*.console.aws.amazon.com/*' });
-        for (const tab of tabsToRefresh) {
-          console.log(`Refreshing tab with URL: ${tab.url}`);
-          browser.tabs.reload(tab.id);
-        }
-      }
-    }
-  } catch (error) {
-    console.error('Error:', error);
-  }
-}
 
 // Check if the current URL contains ".awsapps.com/start#/"
-if (window.location.href.includes('.awsapps.com/') && !window.location.href.includes('.awsapps.com/start/#/saml/custom/')){
-
+if (window.location.href.includes('.awsapps.com/start/#/') && !window.location.href.includes('.awsapps.com/start/#/saml/custom/')
+&& !window.location.href.includes('.awsapps.com/start/#/console')) {
   document.title = 'AWS IIC SSO';
-
-  browser.runtime.sendMessage({ action: 'copyCookiesToAllContainers' });
-
-  //compareAndPromptForRefresh();
-  
-  browser.runtime.sendMessage({ action: 'saveCookieExpiration' });
 
     // Options for the MutationObserver
     const observerOptions = { childList: true, subtree: true };
@@ -376,13 +389,11 @@ if (window.location.href.includes('.awsapps.com/') && !window.location.href.incl
     observer.observe(document, observerOptions);
 
     createLinksFromStorageEntries();
-
-
     
   }
 
  // Function to update the title and log
- function updateTitleAndAddaccount_nameToLoginInfo() {
+ function updateTitleAndAddaccount_nameToLoginInfoOnConsolePages() {
   const elements = document.querySelectorAll('span._hidden-on-mobile--inline_8hy5c_14._more-menu__button-content--label_znf2v_148');
 
   if (elements.length > 0) {
@@ -425,10 +436,10 @@ if (window.location.href.includes('.awsapps.com/') && !window.location.href.incl
     // Check if the current URL contains "console.aws.amazon.com/"
     if (window.location.href.includes('console.aws.amazon.com/')) {
      
-      updateTitleAndAddaccount_nameToLoginInfo();
+      updateTitleAndAddaccount_nameToLoginInfoOnConsolePages();
   
       // Use a MutationObserver to monitor DOM changes
-      const observer = new MutationObserver(updateTitleAndAddaccount_nameToLoginInfo);
+      const observer = new MutationObserver(updateTitleAndAddaccount_nameToLoginInfoOnConsolePages);
   
       const config = { childList: true, subtree: true };
       observer.observe(document, config);

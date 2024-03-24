@@ -110,7 +110,7 @@ const vAPI = {
   },
 
 // Function to add a recent entry to the list in storage
-async addRecentEntryToStorage(href, account_name, account_id, role_name, openIn) {
+async addRecentLoginEntryToStorage(href, account_name, account_id, role_name, openIn) {
   // Retrieve the current list from storage
   const { recentfivelogins: storedEntries } = await browser.storage.local.get('recentfivelogins');
 
@@ -155,7 +155,7 @@ async addRecentEntryToStorage(href, account_name, account_id, role_name, openIn)
 },
 
 // Open the URL in a specific container in the background
-async openUrlInContainerInBackground(url, containerName) {
+async openUrlInContainer(url, containerName) {
   try {
 
      // Clean and decode the container name
@@ -194,7 +194,7 @@ cleanAndDecodeContainerName(name) {
   return name;
 },
 
-async processRecentEntriesInBackground() {
+async processOpenConsolePageContainers() {
   try {
     // Retrieve recent entries from storage
     const { recentfivelogins: recentEntries = [] } = await browser.storage.local.get('recentfivelogins');
@@ -204,6 +204,8 @@ async processRecentEntriesInBackground() {
       console.log('No recent entries found in storage.');
       return;
     }
+
+    console.log('Recent entries:', recentEntries);
 
     const tabs = await browser.tabs.query({ url: '*://*.console.aws.amazon.com/*' });
 
@@ -227,7 +229,7 @@ async processRecentEntriesInBackground() {
       console.log('Processing recent entry:', containerName);
       if (containerNameSet.has(containerName)) {
         console.log('Container already open:', containerName);
-        await vAPI.openUrlInContainerInBackground(href, containerName);
+        await vAPI.openUrlInContainer(href, containerName);
         console.log('Opened URL in container (background):', containerName);
       }
     }
@@ -237,7 +239,6 @@ async processRecentEntriesInBackground() {
 },
   
 };
-
 
 // Listen for messages from the content script
 browser.runtime.onMessage.addListener(async (message, sender, sendResponse) => {
@@ -270,7 +271,7 @@ browser.runtime.onMessage.addListener(async (message, sender, sendResponse) => {
         await vAPI.copyCookiesToContainer(cookies, containerName);
         console.log('message.account_id ' +  message.account_id);
         // Add the current link to recent entries in storage
-        await vAPI.addRecentEntryToStorage(message.link, message.account_name, message.account_id, message.role_name,message.openIn);
+        await vAPI.addRecentLoginEntryToStorage(message.link, message.account_name, message.account_id, message.role_name,message.openIn);
         
         if(message.openIn=='Tab')
         {
@@ -289,6 +290,8 @@ browser.runtime.onMessage.addListener(async (message, sender, sendResponse) => {
     }
     else if (message.action === 'copyCookiesToAllContainers') {
       try {
+
+        console.log('Copying cookies to all containers...message received.');
         // Step 1: Retrieve cookie expiration timestamp from storage
         const result = await browser.storage.local.get('cookieExpirationDateTimeEpoch');
         const cookieExpirationTimestamp = result.cookieExpiration || currentCookieExpirationDateTimeEpoch || 0;
@@ -309,16 +312,28 @@ browser.runtime.onMessage.addListener(async (message, sender, sendResponse) => {
           // Get cookies for the specified domain
           const cookies = await browser.cookies.getAll({ domain:  'awsapps.com' });
     
-          // Copy cookies to all containers
+          // // Copy cookies to all containers
+          // const allContainers = await browser.contextualIdentities.query({});
+          // for (const container of allContainers) {
+          //   console.log(`Copying cookies to container: ${container.name}`);
+          //   await vAPI.copyCookiesToContainer(cookies, container.name);
+          // }
+          // console.log('Cookies copied to all containers successfully.');
+
+          // vAPI.processOpenConsolePageContainers();
+
           const allContainers = await browser.contextualIdentities.query({});
-          for (const container of allContainers) {
-            console.log(`Copying cookies to container: ${container.name}`);
-            await vAPI.copyCookiesToContainer(cookies, container.name);
-          }
+          const copyOperations = allContainers.map(container => {
+              console.log(`Copying cookies to container: ${container.name}`);
+              return vAPI.copyCookiesToContainer(cookies, container.name);
+          });
+
+          await Promise.all(copyOperations);
           console.log('Cookies copied to all containers successfully.');
 
-          //TODO - vAPI.processRecentEntriesInBackground();
-         
+          // Call processOpenConsolePageContainers after all cookies are copied
+          vAPI.processOpenConsolePageContainers();
+                  
 
       } 
     }

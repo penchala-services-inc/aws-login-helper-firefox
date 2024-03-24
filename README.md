@@ -40,6 +40,16 @@ You can install the AWS Login Helper extension from the official Firefox Add-ons
 
     ![Alt text](images/account-name.jpg)
 
+4. Recent Login History
+
+    The Recent Login History feature in our Firefox extension for AWS login management showcases the five most recent role logins directly on the IIC login page. This saves users time and effort by eliminating the need to search for recent roles manually. 
+
+     ![Alt text](images/recent-logins.jpg)
+
+5. Seamless Console Page Reload Post-Authentication
+
+    Users need not tediously reopen console pages after session expiration. They can simply click the reload button in the AWS console, following re-authentication from the AWS IIC page, users stay on the same page, eliminating unnecessary steps and enhancing productivity. 
+
 # Supported AWS Services
 
 AWS Login Helper is designed to work seamlessly with AWS IAM Identity Center (IIC) for a streamlined login experience. Please note that it does not currently support AWS Single Sign-On (SSO).

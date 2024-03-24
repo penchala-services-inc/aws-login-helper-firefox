@@ -1,3 +1,7 @@
+# V2.0.1 (03/24/2024)
+
+- Users can now avoid the mundane task of reopening console pages by remaining on the same page after clicking the reload button in the AWS console, post re-authentication from the AWS IIC page after session expiration, significantly boosting productivity.
+
 # V2.0.0 (03/16/2024)
 
 - Added support for the new aws apps page AWS released on 3/25/2024.
