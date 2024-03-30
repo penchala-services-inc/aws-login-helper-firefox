@@ -370,6 +370,7 @@ function cleanAndDecodeContainerName(name) {
         if (IsDebug) console.log('mutationsList : ');
         if (IsDebug) console.log(mutation.target.classList);
           processedLinks.clear();
+          extractLoginLinks_And_Add_Tab_And_Window_Urls();
       }
     }
   }
