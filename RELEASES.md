@@ -1,3 +1,7 @@
+# V2.0.2 (03/30/2024)
+
+- Fixed Issue: Tab and Windows links not showing up when using search feature.
+
 # V2.0.1 (03/24/2024)
 
 - Users can now avoid the mundane task of reopening console pages by remaining on the same page after clicking the reload button in the AWS console, post re-authentication from the AWS IIC page after session expiration, significantly boosting productivity.
