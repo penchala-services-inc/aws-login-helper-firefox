@@ -197,7 +197,7 @@ function extractLoginLinks_And_Add_Tab_And_Window_Urls() {
       const account_nameContainer = element.closest('.stw1bkrahhh9wPMNiZKU');
       
       // Find the <strong> element with the appropriate class within the parent container
-      const account_name_element = account_nameContainer.querySelector('.awsui_root_18wu0_1qbfe_99');
+      const account_name_element = account_nameContainer.querySelector('strong');
 
       // Extract account name from the found element
       const account_name = account_name_element ? account_name_element.textContent.trim() : '';
