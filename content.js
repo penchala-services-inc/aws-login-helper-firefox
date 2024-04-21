@@ -91,6 +91,7 @@ async function createLinksFromStorageEntries() {
         newLink.style.fontSize = '14px'; // Increase font size
         newLink.style.marginBottom = '10px'; // Add some margin at the bottom
         newLink.style.padding = '10px';
+        newLink.style.fontFamily = 'Amazon Ember';
         
         // Add click event listener to handle link click
         newLink.addEventListener('click', (event) => {
@@ -113,7 +114,7 @@ async function createLinksFromStorageEntries() {
 
         // Add a line break after each link
         parentElement.appendChild(document.createElement('br'));
-        //parentElement.appendChild(document.createElement('br'));
+        parentElement.appendChild(document.createElement('br'));
 
 
         console.log(`Created link for ${account_name} (${account_id})`);
@@ -133,6 +134,7 @@ async function createLinksFromStorageEntries() {
 
       const tipContainer = document.createElement('div');
     //Add a line break after the tip container
+    parentContainer.appendChild(document.createElement('br'));
     parentContainer.appendChild(document.createElement('br'));
     parentContainer.appendChild(document.createElement('br'));
     parentContainer.appendChild(document.createElement('br'));
