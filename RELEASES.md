@@ -1,4 +1,8 @@
-# V2.0.3 (03/30/2024)
+# V2.0.4 (04/21/2024)
+
+- Fixed Issue: Account name not showing next to the role and user info on the console pages.
+  
+# V2.0.3 (04/06/2024)
 
 - Fixed Issue: Cotainer Tab and Window links not showing up as AWS changed the class name for account name.
   
