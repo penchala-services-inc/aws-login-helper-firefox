@@ -1,6 +1,6 @@
 // Background Script (background.js)
 //Idea and code from  [cookie-quick-manager](https://github.com/ysard/cookie-quick-manager/).
-
+const IsDebug = false;
 // Declare a global variable to store unique links
 const links = new Set();
 var currentCookieExpirationDateTimeEpoch = 0;
@@ -83,11 +83,11 @@ const vAPI = {
           if (!cookie.session) {
             if (cookie.expirationDate > (Date.now() / 1000 | 0)) {
               params['expirationDate'] = cookie.expirationDate;
-              console.log('Path ' +  cookie.path);
+              if (IsDebug) console.log('Path ' +  cookie.path);
               
               if (cookie.path && cookie.path.includes('/start/')) {
-                console.log('The cookie path contains "/start/".');
-                console.log('Expiration Date ' + cookie.expirationDate);
+                if (IsDebug) console.log('The cookie path contains "/start/".');
+                if (IsDebug) console.log('Expiration Date ' + cookie.expirationDate);
                 currentCookieExpirationDateTimeEpoch = cookie.expirationDate;
 
               }
@@ -103,14 +103,18 @@ const vAPI = {
       }
   
       await Promise.all(promises);
-      console.log('Cookies copied to container:', containerName);
+      if (IsDebug) console.log('Cookies copied to container:', containerName);
     } catch (error) {
       console.error('Error: ' + error);
     }
   },
 
 // Function to add a recent entry to the list in storage
-async addRecentLoginEntryToStorage(href, account_name, account_id, role_name, openIn) {
+async addRecentLoginEntryToStorage(link, account_name, account_id, role_name, openIn) {
+  
+  // Split the URL based on "&destination" and take the first part
+  const href = link.split('&destination')[0];
+
   // Retrieve the current list from storage
   const { recentfivelogins: storedEntries } = await browser.storage.local.get('recentfivelogins');
 
@@ -166,12 +170,12 @@ async openUrlInContainer(url, containerName) {
     if (containerId) {
       // Construct the URL with the container ID
       const containerizedUrl = `${url}?container=${containerId}`;
-      console.log('URL to open in container (background):', containerizedUrl);
+      if (IsDebug) console.log('URL to open in container (background):', containerizedUrl);
       // Fetch the URL in the background
       //await fetch(containerizedUrl, { method: 'GET' });
       browser.tabs.create({ url: url, cookieStoreId: containerId , active: false});
       
-      console.log('URL opened in container (background):', cleanedContainerName);
+      if (IsDebug) console.log('URL opened in container (background):', cleanedContainerName);
     } else {
       console.error('Failed to open URL in container (background):', cleanedContainerName);
     }
@@ -201,23 +205,23 @@ async processOpenConsolePageContainers() {
 
     // Exit early if there are no recent entries
     if (recentEntries.length === 0) {
-      console.log('No recent entries found in storage.');
+      if (IsDebug) console.log('No recent entries found in storage.');
       return;
     }
 
-    console.log('Recent entries:', recentEntries);
+    if (IsDebug) console.log('Recent entries:', recentEntries);
 
     const tabs = await browser.tabs.query({ url: '*://*.console.aws.amazon.com/*' });
 
     // Extract distinct container IDs from the open tabs
     const distinctContainerIds = new Set(tabs.map(tab => tab.cookieStoreId));
 
-    console.log('Distinct container IDs:', distinctContainerIds);
+    if (IsDebug) console.log('Distinct container IDs:', distinctContainerIds);
 
     // Retrieve container names for the distinct container IDs
     const containerNames = await Promise.all([...distinctContainerIds].map(containerId => vAPI.getContainerNameById(containerId)));
 
-    console.log('Distinct container names:', containerNames);
+    if (IsDebug) console.log('Distinct container names:', containerNames);
 
     // Convert container names to a set for faster lookup
     const containerNameSet = new Set(containerNames);
@@ -226,11 +230,11 @@ async processOpenConsolePageContainers() {
     for (const entry of recentEntries) {
       const { href, account_name, account_id } = entry;
       const containerName = vAPI.cleanAndDecodeContainerName(`${account_id}-${account_name}`);
-      console.log('Processing recent entry:', containerName);
+      if (IsDebug) console.log('Processing recent entry:', containerName);
       if (containerNameSet.has(containerName)) {
-        console.log('Container already open:', containerName);
+        if (IsDebug) console.log('Container already open:', containerName);
         await vAPI.openUrlInContainer(href, containerName);
-        console.log('Opened URL in container (background):', containerName);
+        if (IsDebug) console.log('Opened URL in container (background):', containerName);
       }
     }
   } catch (error) {
@@ -242,7 +246,7 @@ async processOpenConsolePageContainers() {
 
 // Listen for messages from the content script
 browser.runtime.onMessage.addListener(async (message, sender, sendResponse) => {
-    console.log('Message received:', message.action);
+    if (IsDebug) console.log('Message received:', message.action);
     if (message.action === 'copyCookiesAndOpenLink') {
       const containerName = message.containerName || 'DefaultContainer'; // Use a default name if not provided
       const containerColor = getContainerColor(containerName); // Determine the container color
@@ -263,19 +267,17 @@ browser.runtime.onMessage.addListener(async (message, sender, sendResponse) => {
   
         // Get cookies for the specified domain
         const cookies = await browser.cookies.getAll({ domain: 'awsapps.com' });
-
         const containerId = await vAPI.getContainerIdByName(containerName);
 
-  
         // Copy cookies to the container
         await vAPI.copyCookiesToContainer(cookies, containerName);
-        console.log('message.account_id ' +  message.account_id);
+        if (IsDebug) console.log('message.account_id ' +  message.account_id);
         // Add the current link to recent entries in storage
         await vAPI.addRecentLoginEntryToStorage(message.link, message.account_name, message.account_id, message.role_name,message.openIn);
         
         if(message.openIn=='Tab')
         {
-            console.log('Opening link in a new tab: ' + message.link + ' in container: ' + containerName + ' with ID: ' + containerId + ' and color: ' + containerColor);
+            if (IsDebug) console.log('Opening link in a new tab: ' + message.link + ' in container: ' + containerName + ' with ID: ' + containerId + ' and color: ' + containerColor);
             // Open the link in the container
             browser.tabs.create({ url: message.link, cookieStoreId: containerId });
         }
@@ -291,68 +293,142 @@ browser.runtime.onMessage.addListener(async (message, sender, sendResponse) => {
     else if (message.action === 'copyCookiesToAllContainers') {
       try {
 
-        console.log('Copying cookies to all containers...message received.');
-        // Step 1: Retrieve cookie expiration timestamp from storage
-        const result = await browser.storage.local.get('cookieExpirationDateTimeEpoch');
-        const cookieExpirationTimestamp = result.cookieExpiration || currentCookieExpirationDateTimeEpoch || 0;
-        const currentTimestamp = Math.floor(Date.now() / 1000);
-        console.log('Cookie expiration timestamp:', cookieExpirationTimestamp);
-        console.log('Current timestamp:', currentTimestamp);
-        
-        let isExpired = true;
-    
-        // Step 2: Check if cookies are still valid
-        if (cookieExpirationTimestamp > currentTimestamp) {
-          console.log('Cookies are still valid');
-          isExpired = true;
-        } 
-    
-        // Step 3: If cookies are expired, proceed with copying cookies to all containers
-        if (isExpired) {
-          // Get cookies for the specified domain
-          const cookies = await browser.cookies.getAll({ domain:  'awsapps.com' });
-    
-          // // Copy cookies to all containers
-          // const allContainers = await browser.contextualIdentities.query({});
-          // for (const container of allContainers) {
-          //   console.log(`Copying cookies to container: ${container.name}`);
-          //   await vAPI.copyCookiesToContainer(cookies, container.name);
-          // }
-          // console.log('Cookies copied to all containers successfully.');
+        if (IsDebug) console.log('Copying cookies to all containers...message received.');
+      
+        const cookies = await browser.cookies.getAll({ domain:  'awsapps.com' });
 
-          // vAPI.processOpenConsolePageContainers();
+        const allContainers = await browser.contextualIdentities.query({});
+        const copyOperations = allContainers.map(container => {
+            if (IsDebug) console.log(`Copying cookies to container: ${container.name}`);
+            return vAPI.copyCookiesToContainer(cookies, container.name);
+        });
 
-          const allContainers = await browser.contextualIdentities.query({});
-          const copyOperations = allContainers.map(container => {
-              console.log(`Copying cookies to container: ${container.name}`);
-              return vAPI.copyCookiesToContainer(cookies, container.name);
-          });
+        await Promise.all(copyOperations);
+        if (IsDebug) console.log('Cookies copied to all containers successfully.');
 
-          await Promise.all(copyOperations);
-          console.log('Cookies copied to all containers successfully.');
+        // Call processOpenConsolePageContainers after all cookies are copied
+        vAPI.processOpenConsolePageContainers();
 
-          // Call processOpenConsolePageContainers after all cookies are copied
-          vAPI.processOpenConsolePageContainers();
-                  
-
-      } 
     }
     catch (error) {
         console.error('Error copying cookies to all containers: ' + error);
       }
     }
-    else  if (message.action === 'getCurrentCookieExpirationDateTimeEpoch') {
-      // Send currentCookieExpirationDateTimeEpoch to the content script
-      sendResponse({ currentCookieExpirationDateTimeEpoch });
-    }
-    else if (message.action === 'saveCookieExpiration') {
+    else  if (message.action === 'saveConsoleServiceLink') {
+      if (IsDebug) console.log('saveConsoleServiceLink...message received.');
       try {
-          browser.storage.local.set({ cookieExpirationDateTimeEpoch: currentCookieExpirationDateTimeEpoch });
+        await saveConsoleServiceLink(message.url);
       } catch (error) {
-        console.error('saveCookieExpiration Error: ' + error);
+        console.error('Error saving console service link:', error);
       }
     }
+
   });
+
+// Function to get the container name of the current tab
+async function getContainerName() {
+  try {
+      const tabs = await browser.tabs.query({ active: true, currentWindow: true });
+      const tab = tabs[0];
+      if (tab) {
+          const tabId = tab.cookieStoreId;
+          if (tabId !== "firefox-default") {
+              const containers = await browser.contextualIdentities.query({});
+              const container = containers.find(c => c.cookieStoreId === tabId);
+              if (container) {
+                  return container.name;
+              } else {
+                  return null;
+              }
+          } else {
+              return "Default Container";
+          }
+      } else {
+          return null;
+      }
+  } catch (error) {
+      console.error("Error getting container name:", error);
+      return null;
+  }
+}
+
+// Function to handle AWS console URLs and save recent service links
+async function saveConsoleServiceLink(url) {
+  if (isAWSConsoleURL(url)) {
+      if (IsDebug) console.log('AWS Console URL detected:', url);
+      
+      // Extract service name from the URL
+      const serviceName = extractServiceName(url);
+      if (IsDebug) console.log('Service Name:', serviceName);
+      
+      try {
+          // Request container name from background script
+          const containerName = await getContainerName();
+          if (containerName !== null && containerName !== "") {
+              if (IsDebug) console.log('Container Name:', containerName);
+              
+              // Extract account number from the container name
+              const accountId = containerName.split('-')[0];
+              
+              // Check if account ID is all numeric
+              if (!isNaN(accountId)) {
+                  if (IsDebug) console.log('Account ID:', accountId);
+
+                  // Save the recent service link
+                  await addRecentServiceLinkToStorage(accountId, serviceName, url);
+              } else {
+                  if (IsDebug) console.log('Skipping saving entry: Account ID is not all numeric');
+              }
+          } else {
+              if (IsDebug) console.log('Skipping saving entry: Container name not found');
+          }
+      } catch (error) {
+          console.error('Error:', error);
+      }
+  }
+}
+
+
+// Function to extract service name from URL
+function extractServiceName(url) {
+  const path = new URL(url).pathname;
+  const serviceName = path.split('/')[1]; // Get the part after the first slash
+  return serviceName;
+}
+
+// Function to check if the URL is an AWS console URL
+function isAWSConsoleURL(url) {
+  return /\.console\.aws\.amazon\.com\//i.test(url);
+}
+// Function to add recent service link to storage
+async function addRecentServiceLinkToStorage(accountId, serviceName, url) {
+  try {
+      // Get recent service links from storage
+      let recentServicesByAccount = await browser.storage.local.get('recentServicesByAccount');
+      recentServicesByAccount = recentServicesByAccount.recentServicesByAccount || {}; // Ensure recentServicesByAccount is initialized
+
+      // Get or initialize recent services array for the account
+      let recentServicesForAccount = recentServicesByAccount[accountId] || [];
+      
+      // Filter out duplicate entries
+      recentServicesForAccount = recentServicesForAccount.filter(entry => entry.serviceName !== serviceName);
+
+      // Add the new service link to the top
+      recentServicesForAccount.unshift({ serviceName, url });
+
+      // Keep only the recent 5 entries
+      recentServicesForAccount = recentServicesForAccount.slice(0, 5);
+
+      // Update storage with recent service links for the account
+      recentServicesByAccount[accountId] = recentServicesForAccount;
+      await browser.storage.local.set({ recentServicesByAccount });
+      if (IsDebug) console.log('Successfully added recent service link to storage');
+  } catch (error) {
+      console.error('Error adding recent service link to storage:', error);
+  }
+}
+
+
  // Function to determine the container color based on the container name
 function getContainerColor(containerName) {
     const lowerCaseName = containerName.toLowerCase();

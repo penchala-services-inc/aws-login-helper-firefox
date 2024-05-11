@@ -10,20 +10,34 @@ const processedLinks = new Set(); // Keep track of processed links
 const IsDebug = false;
 authenticationComplete = false;
 cookiesCopied = false
+// Define the JSON mapping for services
+const serviceMapping = {
+  "bedrock": "bedrock",
+  "console": "console-home",
+  "states": "step-functions",
+  "redshiftv2": "redshift-home",
+  "sqlworkbench": "redshift-query-editor",
+  // Add more mappings as needed
+};
+
 
 // Function to create links from recent entries in storage
 async function createLinksFromStorageEntries() {
   try {
-    // Wait for the DOM to fully load
-          
       // Retrieve recent entries from storage
       const { recentfivelogins: recentEntries = [] } = await browser.storage.local.get('recentfivelogins');
+            // Get recent service links from storage
+      console.log('Recent Entries:')
+      console.log(recentEntries);
+
+      const { recentServicesByAccount = {} } = await browser.storage.local.get('recentServicesByAccount');
 
       // Exit early if there are no recent entries
       if (recentEntries.length === 0) {
         console.log('No recent entries found in storage.');
         return;
       }
+
        // Check if the recent logins container already exists in the DOM
        let parentContainer = document.querySelector('.recent-logins-container');
        if (!parentContainer) {
@@ -43,7 +57,7 @@ async function createLinksFromStorageEntries() {
  
          // Create and append the recent logins text
          const recentLoginsText = document.createElement('div');
-         recentLoginsText.textContent = 'Recent Logins:';
+         recentLoginsText.textContent = 'Recent Logins & Services:';
          recentLoginsText.style.fontWeight = 'bold'; // Set the text to bold
          recentLoginsText.style.fontSize = '16px'; // Increase font size
          recentLoginsText.style.fontFamily = 'Amazon Ember';
@@ -76,48 +90,80 @@ async function createLinksFromStorageEntries() {
       recentEntries.forEach(entry => {
         const { href, account_name: account_name, account_id, role_name: role_name, openIn } = entry;
 
-        // Create a new link element
-        const newLink = document.createElement('a');
-        newLink.className = 'awsui_link_4c84z_7y59r_99 awsui_variant-secondary_4c84z_7y59r_168 awsui_font-size-body-m_4c84z_7y59r_432';
-        newLink.rel = 'noopener noreferrer';
-        newLink.target = '_self'; // Open in the same tab
-        newLink.href = new URL(href, window.location.href.split('#')[0]).toString();
-        
-        console.log('createLinksFromStorageEntries - Absolute link href:', newLink.href);
-        newLink.title = account_name + ' ' + account_id + ' ' + role_name + '-Container(' + openIn + ')'; // Use account name as title
+       // Create a new span element
+        const newText = document.createElement('span');
+        newText.className = 'awsui_link_4c84z_7y59r_99 awsui_variant-secondary_4c84z_7y59r_168 awsui_font-size-body-m_4c84z_7y59r_432';
+        newText.style.fontSize = '14px'; // Increase font size
+        newText.style.marginBottom = '10px'; // Add some margin at the bottom
+        newText.style.padding = '10px';
+        newText.style.fontFamily = 'Amazon Ember';
 
-        // Set the link text with a pipe separator
-        newLink.textContent = newLink.title;
-        newLink.style.fontSize = '14px'; // Increase font size
-        newLink.style.marginBottom = '10px'; // Add some margin at the bottom
-        newLink.style.padding = '10px';
-        newLink.style.fontFamily = 'Amazon Ember';
-        
-        // Add click event listener to handle link click
-        newLink.addEventListener('click', (event) => {
-          event.preventDefault();
-          const containerName = account_id + '-' + cleanAndDecodeContainerName(account_name);
-          browser.runtime.sendMessage({
-            action: 'copyCookiesAndOpenLink',
-            link: newLink.href,
-            containerName,
-            openIn: openIn,
-            title: newLink.title,
-            role_name: role_name,
-            account_id: account_id,
-            account_name: account_name
-          });
-        });
+        // Set the text content with the desired information
+        newText.textContent = account_name + ' ' + account_id + ' ' + role_name + '-Container(' + openIn + ') - ';
 
         // Insert the new link element before the parent element
-        parentElement.appendChild(newLink);
-
+        parentElement.appendChild(newText);
+        
+        console.log("Recent Services By Account:", recentServicesByAccount);
+        console.log(`Created link for ${account_name} (${account_id})`);
+        console.log("account_id:", account_id);
+        const recentServices = recentServicesByAccount[account_id];
+        console.log('recentServices');
+        console.log(recentServices);
+  
+        if (Array.isArray(recentServices) && recentServices.length > 0) {
+          // Iterate over the recent services for the current account ID
+          recentServices.forEach(entry => {
+            console.log("Service Name:", entry.serviceName);
+            console.log("URL:", entry.url);
+            // Create a new link element for each entry
+            const serviceLink = document.createElement('a');
+            serviceLink.className = 'awsui_link_4c84z_7y59r_99 awsui_variant-secondary_4c84z_7y59r_168 awsui_font-size-body-m_4c84z_7y59r_432';
+            serviceLink.rel = 'noopener noreferrer';
+            serviceLink.target = '_self'; // Open in the same tab
+            serviceLink.href = new URL(href, window.location.href.split('#')[0]).toString()+ '&destination=' + entry.url;
+            
+            console.log('createLinksFromStorageEntries - Absolute link href:', serviceLink.href);
+            serviceLink.title = serviceMapping[entry.serviceName] || entry.serviceName; // Use account name as title
+        
+            // Set the link text with a pipe separator
+            serviceLink.textContent = serviceLink.title;
+            serviceLink.style.fontSize = '14px'; // Increase font size
+            serviceLink.style.marginBottom = '10px'; // Add some margin at the bottom
+            serviceLink.style.padding = '10px';
+            serviceLink.style.fontFamily = 'Amazon Ember';
+            
+            // Add click event listener to handle link click
+            serviceLink.addEventListener('click', (event) => {
+              event.preventDefault();
+              const containerName = account_id + '-' + cleanAndDecodeContainerName(account_name);
+              browser.runtime.sendMessage({
+                action: 'copyCookiesAndOpenLink',
+                link: serviceLink.href,
+                containerName,
+                openIn: openIn,
+                title: serviceLink.title,
+                role_name: role_name,
+                account_id: account_id,
+                account_name: account_name
+              });
+            });
+        
+            // Insert the new link element before the parent element
+            parentElement.appendChild(serviceLink);
+          });
+        } else {
+          console.log("No recent services found for account ID", account_id);
+        }
+        
+        
+        // add links next to the newLink  on the same rowfor each service
+        
         // Add a line break after each link
         parentElement.appendChild(document.createElement('br'));
         parentElement.appendChild(document.createElement('br'));
 
-
-        console.log(`Created link for ${account_name} (${account_id})`);
+        
       });
 
     // // Add a bordered rectangle with a tip message
@@ -204,21 +250,32 @@ function extractLoginLinks_And_Add_Tab_And_Window_Urls() {
       // Extract account name from the found element
       const account_name = account_name_element ? account_name_element.textContent.trim() : '';
 
-      if (!account_id || !role_name) {
-        if (IsDebug) console.error('Failed to extract account_id or role_name from href:', href);
-        continue;
-      }
+      
 
-      if (!account_name) {
-        if (IsDebug) console.error('Failed to extract account name from DOM');
+      if (!account_id || !role_name) {
+        console.error('Failed to extract account_id or role_name from href:', href);
+        // Create an alert box
+        alert("AWS Login Helper\n\nError: Couldn't determine account_id or role_name, extension may not function. \n\nPlease open an issue at: https://github.com/penchala-services-inc/aws-login-helper-firefox/issues");
+
         continue;
       }
 
       if (IsDebug) {
         console.log('Extracted info:');
         console.log('Account ID:', account_id);
-        console.log('Account Name:', account_name);
         console.log('Role Name:', role_name);
+      }
+
+      if (!account_name) {
+        console.error('Failed to extract account name from DOM');
+        // Create an alert box
+        alert("AWS Login Helper\n\nError: Couldn't determine account name, extension may not function. \n\nPlease open an issue at: https://github.com/penchala-services-inc/aws-login-helper-firefox/issues");
+
+        continue;
+      }
+
+      if (IsDebug) {
+        console.log('Account Name:', account_name);
       }
 
       // Add the extracted information to linksInfo set
@@ -355,7 +412,6 @@ function cleanAndDecodeContainerName(name) {
 
       if (IsDebug) console.log('copyCookiesToAllContainers message sent.');
       
-      browser.runtime.sendMessage({ action: 'saveCookieExpiration' });
       cookiesCopied = true;
     }
 
@@ -395,35 +451,63 @@ if (window.location.href.includes('.awsapps.com/start/#/') && !window.location.h
     
   }
 
+// Function to check if the URL is an AWS console URL
+function isAWSConsoleURL(url) {
+  return /\.console\.aws\.amazon\.com\//i.test(url);
+}
+
+if (isAWSConsoleURL(window.location.href)&& !window.location.href.includes('.awsapps.com/start/#/console')) {
+    console.log('AWS Console URL detected:', window.location.href);
+    browser.runtime.sendMessage({ 
+      action: 'saveConsoleServiceLink', 
+      url: window.location.href 
+    });
+
+  }
+
  // Function to update the title and log
  function updateTitleAndAddaccount_nameToLoginInfoOnConsolePages() {
-  const elements = document.querySelectorAll('span._hidden-on-mobile--inline_8hy5c_14._more-menu__button-content--label_znf2v_148');
+  console.log('updateTitleAndAddaccount_nameToLoginInfoOnConsolePages function called');
+  // Use the 'data-testid' attribute to select the DOM element
+  const elements = document.querySelectorAll('span[data-testid="awsc-nav-account-menu-button"]');
+  console.log('Elements found: ', elements.length);
 
   if (elements.length > 0) {
     for (const element of elements) {
-      const titleAttribute = element.getAttribute('title');
+      if (IsDebug) console.log('Processing element: ', element);
+
+      // Select the nested span element and get its 'title' attribute
+      const nestedSpan = element.querySelector('span');
+      if (!nestedSpan) { 
+        return
+      }
+      if (IsDebug) console.log('Nested span element: ', nestedSpan);
+
+      const titleAttribute = nestedSpan.getAttribute('title');
+      if (IsDebug) console.log('Title attribute: ', titleAttribute);
 
       if (titleAttribute) { // Check if the title attribute is not null
         // Check if the title attribute contains "@" symbol
         if (titleAttribute.includes('@')) {
           const account_nameMatch = titleAttribute.match(/@ ([^\s]+)/);
+          if (IsDebug) console.log('Account name match: ', account_nameMatch);
 
           if (account_nameMatch && account_nameMatch[1]) {
             const account_name = account_nameMatch[1];
+            if (IsDebug) console.log('Account name: ', account_name);
 
             // Check if the title already starts with the account name
             if (!document.title.startsWith(account_name + ' - ')) {
               // Set the new title combining the account name and the current title
               document.title = account_name + ' - ' + document.title;
-              console.log('Title updated: ' + document.title);
-
-           
+              if (IsDebug) console.log('Title updated: ' + document.title);
             }
 
-              // Append the element's text content with the account name
+            // Append the element's text content with the account name
             if (!element.textContent.includes(account_name)) {
               element.textContent = element.textContent + ' ' + account_name;
-              }
+              if (IsDebug) console.log('Element text content updated: ' + element.textContent);
+            }
 
           } else {
             console.log('Account name not found in title attribute');
@@ -432,9 +516,10 @@ if (window.location.href.includes('.awsapps.com/start/#/') && !window.location.h
       }
     }
   } else {
-    console.log('No elements found with the specified class');
+    console.log('No elements found with the specified data-testid');
   }
 }
+
 
     // Check if the current URL contains "console.aws.amazon.com/"
     if (window.location.href.includes('console.aws.amazon.com/')) {
