@@ -1,3 +1,7 @@
+V2.0.5 (05/11/2024)
+
+- New Feature: Service history is also now added per account along with recent login history.
+
 # V2.0.4 (04/21/2024)
 
 - Fixed Issue: Account name not showing next to the role and user info on the console pages.
