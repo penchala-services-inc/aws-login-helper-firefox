@@ -7,7 +7,7 @@ let addingTabandWindowLinks = false;
 const linksInfo = new Set();
 const processedLinks = new Set(); // Keep track of processed links
 // Set debug flag
-const IsDebug = false;
+const IsDebug = true;
 authenticationComplete = false;
 cookiesCopied = false
 // Define the JSON mapping for services
@@ -20,6 +20,102 @@ const serviceMapping = {
   // Add more mappings as needed
 };
 
+document.addEventListener("DOMContentLoaded", (event) => {
+  console.log("DOM fully loaded and parsed");
+});
+
+window.addEventListener("load", (event) => {
+  console.log("Page fully loaded");
+  browser.runtime.sendMessage({ action: 'SaveCookieExpiryDateTime' });
+  AppendSessionExpiryTime();
+});
+
+if (document.readyState === "complete") {
+  console.log("Document already fully loaded");
+} else {
+  document.addEventListener("readystatechange", (event) => {
+      if (document.readyState === "complete") {
+          console.log("Document now fully loaded");
+      }
+  });
+}
+
+async function AppendSessionExpiryTime() {
+  if (IsDebug) console.log('AppendSessionExpiryTime function called');
+  try {
+    // Retrieve the CookieExpiryDateTime from storage
+    const result = await browser.storage.local.get('CookieExpiryDateTime');
+    const expiryDateTime = result.CookieExpiryDateTime;
+
+    if (expiryDateTime) {
+      const currentTime = Date.now() / 1000; // Current time in seconds
+      if (expiryDateTime > currentTime) {
+        // Calculate the difference in minutes
+        const diffInMinutes = Math.floor((expiryDateTime - currentTime) / 60);
+
+        // Convert minutes to hours and minutes
+        const hours = Math.floor(diffInMinutes / 60);
+        const minutes = diffInMinutes % 60;
+        const formattedTime = `${hours} hour${hours !== 1 ? 's' : ''} ${minutes} min${minutes !== 1 ? 's' : ''}`;
+
+        // Check the current URL
+        const currentUrl = window.location.href;
+
+        if (currentUrl.includes('console.aws.amazon.com/')) {
+          // Find the div with id "h"
+          const targetDiv = document.getElementById('h');
+          
+          if (targetDiv) {
+            // Check if the new div already exists
+            let newDiv = targetDiv.querySelector('.expires-div');
+            if (!newDiv) {
+              // Create the new div if it doesn't exist
+              newDiv = document.createElement('div');
+              newDiv.className = 'expires-div';
+              newDiv.style.cssText = "align-items: center; font-size: large; color: red; flex-direction: column; display: flex;";
+              targetDiv.appendChild(newDiv);
+            }
+            // Update the text content of the new div
+            newDiv.textContent = `Session expires in ${formattedTime}`;
+          } else {
+            console.error('Target div not found');
+          }
+        }
+
+        if (currentUrl.includes('awsapps.com/start/#/')) {
+          // Find the specified span element
+          const spanElement = document.querySelector('.awsui_heading-text_2qdw9_zri8m_397.awsui_heading-text_105ke_268sp_5.awsui_heading-text-variant-h1_2qdw9_zri8m_400#heading\\:r1g\\:');
+
+          if (spanElement) {
+            // Check if the session expiry span already exists
+            let expiryText = spanElement.querySelector('.session-expiry');
+            if (!expiryText) {
+              // Create a new span element if it doesn't exist
+              expiryText = document.createElement('span');
+              expiryText.className = 'session-expiry';
+              spanElement.appendChild(expiryText);
+            }
+
+            // Update the text content of the session expiry span
+            expiryText.textContent = ` (session expires in ${formattedTime})`;
+
+            document.title = 'AWS IIC SSO-' + formattedTime;
+          }
+        }
+      }
+    }
+  } catch (error) {
+    console.error('Error retrieving or processing CookieExpiryDateTime:', error);
+  }
+}
+
+if(window.location.href.includes('.awsapps.com/start/#/') || window.location.href.includes('console.aws.amazon.com'))
+{
+  AppendSessionExpiryTime();
+
+  setInterval(AppendSessionExpiryTime, 60000);
+}
+
 
 // Function to create links from recent entries in storage
 async function createLinksFromStorageEntries() {
@@ -27,14 +123,14 @@ async function createLinksFromStorageEntries() {
       // Retrieve recent entries from storage
       const { recentfivelogins: recentEntries = [] } = await browser.storage.local.get('recentfivelogins');
             // Get recent service links from storage
-      console.log('Recent Entries:')
-      console.log(recentEntries);
+      if (IsDebug) console.log('Recent Entries:')
+      if (IsDebug) console.log(recentEntries);
 
       const { recentServicesByAccount = {} } = await browser.storage.local.get('recentServicesByAccount');
 
       // Exit early if there are no recent entries
       if (recentEntries.length === 0) {
-        console.log('No recent entries found in storage.');
+        if (IsDebug) console.log('No recent entries found in storage.');
         return;
       }
 
@@ -73,7 +169,7 @@ async function createLinksFromStorageEntries() {
          
          parentContainer.appendChild(separator);
        } else {
-         console.log('Recent logins container already exists in the DOM.');
+        if (IsDebug) console.log('Recent logins container already exists in the DOM.');
          return;
        }
 
@@ -104,18 +200,18 @@ async function createLinksFromStorageEntries() {
         // Insert the new link element before the parent element
         parentElement.appendChild(newText);
         
-        console.log("Recent Services By Account:", recentServicesByAccount);
-        console.log(`Created link for ${account_name} (${account_id})`);
-        console.log("account_id:", account_id);
+        if (IsDebug) console.log("Recent Services By Account:", recentServicesByAccount);
+        if (IsDebug) console.log(`Created link for ${account_name} (${account_id})`);
+        if (IsDebug) console.log("account_id:", account_id);
         const recentServices = recentServicesByAccount[account_id];
-        console.log('recentServices');
-        console.log(recentServices);
+        if (IsDebug) console.log('recentServices');
+        if (IsDebug) console.log(recentServices);
   
         if (Array.isArray(recentServices) && recentServices.length > 0) {
           // Iterate over the recent services for the current account ID
           recentServices.forEach(entry => {
-            console.log("Service Name:", entry.serviceName);
-            console.log("URL:", entry.url);
+            if (IsDebug) console.log("Service Name:", entry.serviceName);
+            if (IsDebug) console.log("URL:", entry.url);
             // Create a new link element for each entry
             const serviceLink = document.createElement('a');
             serviceLink.className = 'awsui_link_4c84z_7y59r_99 awsui_variant-secondary_4c84z_7y59r_168 awsui_font-size-body-m_4c84z_7y59r_432';
@@ -123,7 +219,7 @@ async function createLinksFromStorageEntries() {
             serviceLink.target = '_self'; // Open in the same tab
             serviceLink.href = new URL(href, window.location.href.split('#')[0]).toString()+ '&destination=' + entry.url;
             
-            console.log('createLinksFromStorageEntries - Absolute link href:', serviceLink.href);
+            if (IsDebug) console.log('createLinksFromStorageEntries - Absolute link href:', serviceLink.href);
             serviceLink.title = serviceMapping[entry.serviceName] || entry.serviceName; // Use account name as title
         
             // Set the link text with a pipe separator
@@ -153,7 +249,7 @@ async function createLinksFromStorageEntries() {
             parentElement.appendChild(serviceLink);
           });
         } else {
-          console.log("No recent services found for account ID", account_id);
+          if (IsDebug) console.log("No recent services found for account ID", account_id);
         }
         
         
@@ -176,7 +272,7 @@ async function createLinksFromStorageEntries() {
 
       privacyContainer.textContent = 'Privacy Notice: By using this addon/extension (AWS Login Helper), you agree to its function of copying cookies from the awsapps.com domain to different containers in your browser. Rest assured, your information remains secure and is not leaked or copied elsewhere.';
       
-      parentContainer.appendChild(privacyContainer);
+      //parentContainer.appendChild(privacyContainer);
 
       const tipContainer = document.createElement('div');
     //Add a line break after the tip container
@@ -194,7 +290,7 @@ async function createLinksFromStorageEntries() {
     tipContainer.textContent = 'Tip: When your console pages expire (console.aws.amazon.com), come to this IIC page, re-login by refreshing/reloading, and go back to the console page. '
     +'\n\r'+ 'Then, hit the reload button to continue what you are doing without reopening everything again.';
     
-    parentContainer.appendChild(tipContainer);
+    //parentContainer.appendChild(tipContainer);
 
   // Add a line break after the tip container
   parentContainer.appendChild(document.createElement('br'));
@@ -261,9 +357,9 @@ function extractLoginLinks_And_Add_Tab_And_Window_Urls() {
       }
 
       if (IsDebug) {
-        console.log('Extracted info:');
-        console.log('Account ID:', account_id);
-        console.log('Role Name:', role_name);
+        if (IsDebug) console.log('Extracted info:');
+        if (IsDebug) console.log('Account ID:', account_id);
+        if (IsDebug) console.log('Role Name:', role_name);
       }
 
       if (!account_name) {
@@ -380,6 +476,15 @@ function extractAccountIdAndRoleName(href) {
   return { account_id, role_name };
 }
 
+async function removeCookieExpiryDateTime() {
+  try {
+    await browser.storage.local.remove('CookieExpiryDateTime');
+    console.log('CookieExpiryDateTime has been removed from storage.');
+  } catch (error) {
+    console.error('Error removing CookieExpiryDateTime from storage:', error);
+  }
+}
+
 // Function to clean and decode a container name
 function cleanAndDecodeContainerName(name) {
     // Decode percent-encoded characters (e.g., "%20" to space)
@@ -403,13 +508,19 @@ function cleanAndDecodeContainerName(name) {
     //we want to wait until the authentication is done before copying cookies
     if(window.location.href.includes('.awsapps.com/start/#/workflowResultHandle'))
     {
+      removeCookieExpiryDateTime();
+
       authenticationComplete = true;
+      console.log('authenticationComplete set to true.');
+
     }
     if(window.location.href.includes('.awsapps.com/start/#/') && !window.location.href.includes('.awsapps.com/start/#/workflowResultHandle') && authenticationComplete && cookiesCopied == false){
       
       
       browser.runtime.sendMessage({ action: 'copyCookiesToAllContainers' });
-
+      AppendSessionExpiryTime();
+      console.log('copyCookiesToAllContainers message sent.');
+     
       if (IsDebug) console.log('copyCookiesToAllContainers message sent.');
       
       cookiesCopied = true;
@@ -419,7 +530,7 @@ function cleanAndDecodeContainerName(name) {
       if (IsDebug) console.log('mutation.target.classList : ' + mutation.target.classList);
       if (mutation.target.classList.contains('ZA2Ih29gQPWWy47dDhuE')) {
         if (IsDebug) console.log('Account Role mutation observed.');
-        console.log(' handleMutations Account Role mutation url '  + window.location.href);
+        if (IsDebug) console.log(' handleMutations Account Role mutation url '  + window.location.href);
         if (addingTabandWindowLinks === false)
           extractLoginLinks_And_Add_Tab_And_Window_Urls();
         if (IsDebug) console.log('Links:', links.size);
@@ -457,7 +568,7 @@ function isAWSConsoleURL(url) {
 }
 
 if (isAWSConsoleURL(window.location.href)&& !window.location.href.includes('.awsapps.com/start/#/console')) {
-    console.log('AWS Console URL detected:', window.location.href);
+  if (IsDebug) console.log('AWS Console URL detected:', window.location.href);
     browser.runtime.sendMessage({ 
       action: 'saveConsoleServiceLink', 
       url: window.location.href 
@@ -467,10 +578,10 @@ if (isAWSConsoleURL(window.location.href)&& !window.location.href.includes('.aws
 
  // Function to update the title and log
  function updateTitleAndAddaccount_nameToLoginInfoOnConsolePages() {
-  console.log('updateTitleAndAddaccount_nameToLoginInfoOnConsolePages function called');
+  if (IsDebug) console.log('updateTitleAndAddaccount_nameToLoginInfoOnConsolePages function called');
   // Use the 'data-testid' attribute to select the DOM element
   const elements = document.querySelectorAll('span[data-testid="awsc-nav-account-menu-button"]');
-  console.log('Elements found: ', elements.length);
+  if (IsDebug) console.log('Elements found: ', elements.length);
 
   if (elements.length > 0) {
     for (const element of elements) {
@@ -510,13 +621,13 @@ if (isAWSConsoleURL(window.location.href)&& !window.location.href.includes('.aws
             }
 
           } else {
-            console.log('Account name not found in title attribute');
+            console.warn('Account name not found in title attribute');
           }
         }
       }
     }
   } else {
-    console.log('No elements found with the specified data-testid');
+    console.warn('No elements found with the specified data-testid');
   }
 }
 
@@ -532,3 +643,4 @@ if (isAWSConsoleURL(window.location.href)&& !window.location.href.includes('.aws
       const config = { childList: true, subtree: true };
       observer.observe(document, config);
     }
+

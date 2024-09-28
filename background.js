@@ -1,6 +1,6 @@
 // Background Script (background.js)
 //Idea and code from  [cookie-quick-manager](https://github.com/ysard/cookie-quick-manager/).
-const IsDebug = false;
+const IsDebug = true;
 // Declare a global variable to store unique links
 const links = new Set();
 var currentCookieExpirationDateTimeEpoch = 0;
@@ -8,11 +8,8 @@ var currentCookieExpirationDateTimeEpoch = 0;
 // Define a constant for the maximum number of recent entries to keep
 const MAX_RECENT_ENTRIES = 5;
 
-// Initialize an array to hold recent entries
-let recentEntries = [];
-
 // Adapted vAPI functions
-const vAPI = {
+const vAPIBackground = {
 
   async getContainerNameById(containerId) {
     try {
@@ -29,9 +26,13 @@ const vAPI = {
     try {
       // Get the list of containers
       const containers = await browser.contextualIdentities.query({});
+      if (IsDebug) console.log('containers ' + containers);
 
       for (const container of containers) {
+
         if (container.name === containerName) {
+          if (IsDebug) console.log('container.cookieStoreId ' + container.cookieStoreId);
+          if (IsDebug) console.log('container.name ' + container.name);
           return container.cookieStoreId;
         }
       }
@@ -58,16 +59,57 @@ const vAPI = {
     return (current_date / 1000 > expirationDate);
   },
 
-  // Function to copy cookies to a specified container
+  async SaveCookieExpiryDateTime(cookies) {
+    try {
+  
+      console.log('SaveCookieExpiryDateTime');
+      if (IsDebug) console.log(cookies);
+  
+      for (let cookie of cookies) {
+        if (IsDebug) console.log(cookie);
+        if (!this.isExpired(cookie.expirationDate)) {
+          if (IsDebug) console.log(cookie.name);
+  
+          if (!cookie.session) {
+            if (cookie.expirationDate > (Date.now() / 1000 | 0)) {
+              if (IsDebug) console.log(cookie.expirationDate);
+              if (IsDebug) console.log('Path ' + cookie.path);
+              if (IsDebug) console.log('Domain ' + cookie.domain);
+              if (IsDebug) console.log('Name ' + cookie.name);
+              if (IsDebug) console.log('Expiration ' + cookie.expirationDate);
+              // Save expirationDate to storage if domain is .awsapps.com and name is x-amz-sso_authn
+              if (cookie.domain.includes('.awsapps.com') && cookie.name === 'x-amz-sso_authn' && cookie.path && cookie.path.includes('/start/')) {
+                if (cookie.expirationDate > (Date.now() / 1000 | 0)) {
+                  await browser.storage.local.set({ 'CookieExpiryDateTime': cookie.expirationDate });
+                  console.log('Saved CookieExpiryDateTime to storage from SaveCookieExpiryDateTime:', cookie.expirationDate);
+                  return
+                }
+              }
+            }
+          }
+  
+        }
+      }
+  
+    } catch (error) {
+      console.error('Error: ' + error);
+    }
+  },  
+
   async copyCookiesToContainer(cookies, containerName) {
     try {
-      const containerId = await vAPI.getContainerIdByName(containerName);
+      const containerId = await vAPIBackground.getContainerIdByName(containerName);
+  
+      if (IsDebug) console.log('copyCookiesToContainer - containerName ' + containerName);
+      if (IsDebug) console.log(cookies);
   
       let promises = [];
       for (let cookie of cookies) {
+        if (IsDebug) console.log(cookie);
         if (!this.isExpired(cookie.expirationDate)) {
+          if (IsDebug) console.log(cookie.name);
           let params = {
-            url: vAPI.getHostUrl(cookie),
+            url: vAPIBackground.getHostUrl(cookie),
             name: cookie.name,
             value: cookie.value,
             path: cookie.path,
@@ -75,21 +117,25 @@ const vAPI = {
             secure: cookie.secure,
             storeId: containerId,
           };
-  
+          if (IsDebug) console.log(params);
           if (cookie.sameSite != null) {
             params['sameSite'] = cookie.sameSite;
           }
-
+  
           if (!cookie.session) {
             if (cookie.expirationDate > (Date.now() / 1000 | 0)) {
+              if (IsDebug) console.log(cookie.expirationDate);
               params['expirationDate'] = cookie.expirationDate;
-              if (IsDebug) console.log('Path ' +  cookie.path);
-              
-              if (cookie.path && cookie.path.includes('/start/')) {
-                if (IsDebug) console.log('The cookie path contains "/start/".');
-                if (IsDebug) console.log('Expiration Date ' + cookie.expirationDate);
-                currentCookieExpirationDateTimeEpoch = cookie.expirationDate;
-
+              if (IsDebug) console.log('Path ' + cookie.path);
+              if (IsDebug) console.log('Domain ' + cookie.domain);
+              if (IsDebug) console.log('Name ' + cookie.name);
+              if (IsDebug) console.log('Expiration ' + cookie.expirationDate);
+              // Save expirationDate to storage if domain is .awsapps.com and name is x-amz-sso_authn
+              if (cookie.domain.includes('.awsapps.com') && cookie.name === 'x-amz-sso_authn' && cookie.path && cookie.path.includes('/start/')) {
+                if (cookie.expirationDate > (Date.now() / 1000 | 0)) {
+                  await browser.storage.local.set({ 'CookieExpiryDateTime': cookie.expirationDate });
+                  if (IsDebug) console.log('Saved CookieExpiryDateTime to storage:', cookie.expirationDate);
+                }
               }
             }
           }
@@ -107,7 +153,7 @@ const vAPI = {
     } catch (error) {
       console.error('Error: ' + error);
     }
-  },
+  },  
 
 // Function to add a recent entry to the list in storage
 async addRecentLoginEntryToStorage(link, account_name, account_id, role_name, openIn) {
@@ -163,9 +209,9 @@ async openUrlInContainer(url, containerName) {
   try {
 
      // Clean and decode the container name
-     const cleanedContainerName = vAPI.cleanAndDecodeContainerName(containerName);
+     const cleanedContainerName = vAPIBackground.cleanAndDecodeContainerName(containerName);
     // Get the container ID
-    const containerId = await vAPI.getContainerIdByName(cleanedContainerName);
+    const containerId = await vAPIBackground.getContainerIdByName(cleanedContainerName);
     
     if (containerId) {
       // Construct the URL with the container ID
@@ -219,7 +265,7 @@ async processOpenConsolePageContainers() {
     if (IsDebug) console.log('Distinct container IDs:', distinctContainerIds);
 
     // Retrieve container names for the distinct container IDs
-    const containerNames = await Promise.all([...distinctContainerIds].map(containerId => vAPI.getContainerNameById(containerId)));
+    const containerNames = await Promise.all([...distinctContainerIds].map(containerId => vAPIBackground.getContainerNameById(containerId)));
 
     if (IsDebug) console.log('Distinct container names:', containerNames);
 
@@ -229,11 +275,11 @@ async processOpenConsolePageContainers() {
     // Iterate through recent entries and open URLs in the background for distinct containers
     for (const entry of recentEntries) {
       const { href, account_name, account_id } = entry;
-      const containerName = vAPI.cleanAndDecodeContainerName(`${account_id}-${account_name}`);
+      const containerName = vAPIBackground.cleanAndDecodeContainerName(`${account_id}-${account_name}`);
       if (IsDebug) console.log('Processing recent entry:', containerName);
       if (containerNameSet.has(containerName)) {
         if (IsDebug) console.log('Container already open:', containerName);
-        await vAPI.openUrlInContainer(href, containerName);
+        await vAPIBackground.openUrlInContainer(href, containerName);
         if (IsDebug) console.log('Opened URL in container (background):', containerName);
       }
     }
@@ -247,6 +293,7 @@ async processOpenConsolePageContainers() {
 // Listen for messages from the content script
 browser.runtime.onMessage.addListener(async (message, sender, sendResponse) => {
     if (IsDebug) console.log('Message received:', message.action);
+    
     if (message.action === 'copyCookiesAndOpenLink') {
       const containerName = message.containerName || 'DefaultContainer'; // Use a default name if not provided
       const containerColor = getContainerColor(containerName); // Determine the container color
@@ -264,16 +311,25 @@ browser.runtime.onMessage.addListener(async (message, sender, sendResponse) => {
             icon: 'circle', // Choose an icon for the new container
           });
         }
-  
-        // Get cookies for the specified domain
-        const cookies = await browser.cookies.getAll({ domain: 'awsapps.com' });
-        const containerId = await vAPI.getContainerIdByName(containerName);
+        const containerId = await vAPIBackground.getContainerIdByName(containerName);
+       
+        // Get all cookies
+        browser.cookies.getAll({storeId: "firefox-default"})
+        .then(cookies => {
+          // Filter cookies by domain
+          const filteredCookies = cookies.filter(cookie => cookie.domain.includes('.awsapps.com'));
 
-        // Copy cookies to the container
-        await vAPI.copyCookiesToContainer(cookies, containerName);
+          // Log the filtered cookies
+          if (IsDebug) console.log(filteredCookies);
+          vAPIBackground.copyCookiesToContainer(filteredCookies, containerName);
+        })
+        .catch(error => {
+          console.error('Error getting cookies:', error);
+        });
+
         if (IsDebug) console.log('message.account_id ' +  message.account_id);
         // Add the current link to recent entries in storage
-        await vAPI.addRecentLoginEntryToStorage(message.link, message.account_name, message.account_id, message.role_name,message.openIn);
+        await vAPIBackground.addRecentLoginEntryToStorage(message.link, message.account_name, message.account_id, message.role_name,message.openIn);
         
         if(message.openIn=='Tab')
         {
@@ -290,24 +346,65 @@ browser.runtime.onMessage.addListener(async (message, sender, sendResponse) => {
         console.error('Error: ' + error);
       }
     }
+    else     if (message.action === 'SaveCookieExpiryDateTime') {
+  
+      try {
+        // Check if the container exists, and if not, create it
+       
+        // Get all cookies
+        browser.cookies.getAll({storeId: "firefox-default"})
+        .then(cookies => {
+          // Filter cookies by domain
+          const filteredCookies = cookies.filter(cookie => cookie.domain.includes('.awsapps.com'));
+
+          // Log the filtered cookies
+          if (IsDebug) console.log(filteredCookies);
+          vAPIBackground.SaveCookieExpiryDateTime(filteredCookies);
+        })
+        .catch(error => {
+          console.error('Error getting cookies:', error);
+        });
+
+
+      } catch (error) {
+        console.error('Error: ' + error);
+      }
+    }
     else if (message.action === 'copyCookiesToAllContainers') {
       try {
 
         if (IsDebug) console.log('Copying cookies to all containers...message received.');
       
-        const cookies = await browser.cookies.getAll({ domain:  'awsapps.com' });
+        // Get all cookies
+        browser.cookies.getAll({ storeId: "firefox-default" })
+          .then(cookies => {
+            // Filter cookies by domain
+            const filteredCookies = cookies.filter(cookie => cookie.domain.includes('.awsapps.com'));
 
-        const allContainers = await browser.contextualIdentities.query({});
-        const copyOperations = allContainers.map(container => {
-            if (IsDebug) console.log(`Copying cookies to container: ${container.name}`);
-            return vAPI.copyCookiesToContainer(cookies, container.name);
-        });
+            // Log the filtered cookies
+            if (IsDebug) console.log(filteredCookies);
 
-        await Promise.all(copyOperations);
+            // Get all containers
+            return browser.contextualIdentities.query({})
+              .then(allContainers => {
+                // Copy cookies to each container
+                const copyOperations = allContainers.map(container => {
+                  if (IsDebug) console.log(`Copying cookies to container: ${container.name}`);
+                  return vAPIBackground.copyCookiesToContainer(filteredCookies, container.name);
+                });
+
+                // Return all copy operations
+                return Promise.all(copyOperations);
+              });
+          })
+          .catch(error => {
+            console.error('Error getting cookies or containers:', error);
+          });
+
         if (IsDebug) console.log('Cookies copied to all containers successfully.');
 
         // Call processOpenConsolePageContainers after all cookies are copied
-        vAPI.processOpenConsolePageContainers();
+        //vAPI.processOpenConsolePageContainers();
 
     }
     catch (error) {
