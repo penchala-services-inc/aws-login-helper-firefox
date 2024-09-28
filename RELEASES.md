@@ -1,3 +1,8 @@
+V2.0.6 (05/11/2024)
+
+- New Feature: Session expiry time on the console and login/accounts page.
+- Fixed Issue: Authentication prompt every time on tab/window open for a account/role after logging into accounts page. 
+  
 V2.0.5 (05/11/2024)
 
 - New Feature: Service history is also now added per account along with recent login history.
