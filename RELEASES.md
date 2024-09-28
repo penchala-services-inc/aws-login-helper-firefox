@@ -1,4 +1,4 @@
-V2.0.6 (05/11/2024)
+V2.0.6 (09/28/2024)
 
 - New Feature: Session expiry time on the console and login/accounts page.
 - Fixed Issue: Authentication prompt every time on tab/window open for a account/role after logging into accounts page. 
