@@ -1,3 +1,6 @@
+V2.0.7 (11/02/2024)
+- Fixed Issue: Session expiry time/Links for tab/window are missing. 
+
 V2.0.6 (09/28/2024)
 
 - New Feature: Session expiry time on the console and login/accounts page.
