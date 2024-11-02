@@ -54,6 +54,10 @@ You can install the AWS Login Helper extension from the official Firefox Add-ons
 
 The extension displays the session expiry time in the Console and on the Login, Accounts, and Apps pages. This feature helps users keep track of their session status and plan their activities accordingly. 
 
+     ![Alt text](images/apps_session_expire.png)
+
+      ![Alt text](images/session_console.png)
+      
 # Supported AWS Services
 
 AWS Login Helper is designed to work seamlessly with AWS IAM Identity Center (IIC) for a streamlined login experience. Please note that it does not currently support AWS Single Sign-On (SSO).
