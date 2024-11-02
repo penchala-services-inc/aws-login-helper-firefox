@@ -84,7 +84,7 @@ async function AppendSessionExpiryTime() {
 
         if (currentUrl.includes('awsapps.com/start/#/')) {
           // Find the specified span element
-          const spanElement = document.querySelector('.awsui_heading-text_2qdw9_zri8m_397.awsui_heading-text_105ke_268sp_5.awsui_heading-text-variant-h1_2qdw9_zri8m_400#heading\\:r1g\\:');
+          const spanElement = document.getElementById('heading:r1i:');
 
           if (spanElement) {
             // Check if the session expiry span already exists
@@ -338,7 +338,7 @@ function extractLoginLinks_And_Add_Tab_And_Window_Urls() {
       const { account_id, role_name } = extractAccountIdAndRoleName(href);
       
       // Find the parent div element containing the account name
-      const account_nameContainer = element.closest('.stw1bkrahhh9wPMNiZKU');
+      const account_nameContainer = element.closest('.awsui_child_18582_7onux_145');
       
       // Find the <strong> element with the appropriate class within the parent container
       const account_name_element = account_nameContainer.querySelector('strong');
@@ -528,13 +528,13 @@ function cleanAndDecodeContainerName(name) {
 
     for (const mutation of mutationsList) {
       if (IsDebug) console.log('mutation.target.classList : ' + mutation.target.classList);
-      if (mutation.target.classList.contains('ZA2Ih29gQPWWy47dDhuE')) {
+      if (mutation.target.classList.contains('ggXus_2CiDezyLYZFJdc') || mutation.target.classList.contains('Lg4DhdV0kd6Nqg0kTBPs')) {
         if (IsDebug) console.log('Account Role mutation observed.');
         if (IsDebug) console.log(' handleMutations Account Role mutation url '  + window.location.href);
         if (addingTabandWindowLinks === false)
           extractLoginLinks_And_Add_Tab_And_Window_Urls();
         if (IsDebug) console.log('Links:', links.size);
-      } else if (mutationsList.length == 1 && mutation.target.classList.contains('stw1bkrahhh9wPMNiZKU')) {
+      } else if (mutationsList.length == 1 && mutation.target.classList.contains('UQDbz64f0aRBYmzupdOU')) {
         if (IsDebug) console.log('Account Collapse mutation observed.');
         if (IsDebug) console.log('mutationsList : ');
         if (IsDebug) console.log(mutation.target.classList);
@@ -607,12 +607,8 @@ if (isAWSConsoleURL(window.location.href)&& !window.location.href.includes('.aws
             const account_name = account_nameMatch[1];
             if (IsDebug) console.log('Account name: ', account_name);
 
-            // Check if the title already starts with the account name
-            if (!document.title.startsWith(account_name + ' - ')) {
-              // Set the new title combining the account name and the current title
-              document.title = account_name + ' - ' + document.title;
-              if (IsDebug) console.log('Title updated: ' + document.title);
-            }
+            document.title = account_name + ' - ' + document.title;
+
 
             // Append the element's text content with the account name
             if (!element.textContent.includes(account_name)) {
@@ -643,4 +639,3 @@ if (isAWSConsoleURL(window.location.href)&& !window.location.href.includes('.aws
       const config = { childList: true, subtree: true };
       observer.observe(document, config);
     }
-
