@@ -52,11 +52,11 @@ You can install the AWS Login Helper extension from the official Firefox Add-ons
 
 6. Session Expiry Time
 
-The extension displays the session expiry time in the Console and on the Login, Accounts, and Apps pages. This feature helps users keep track of their session status and plan their activities accordingly. 
+    The extension displays the session expiry time in the Console and on the Login, Accounts, and Apps pages. This feature helps users keep track of their session status and plan their activities accordingly. 
 
-     ![Alt text](images/apps_session_expire.png)
+   ![Alt text](images/apps_session_expire.png)
 
-      ![Alt text](images/session_console.png)
+   ![Alt text](images/session_console.png)
       
 # Supported AWS Services
 
