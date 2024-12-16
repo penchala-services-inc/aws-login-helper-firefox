@@ -1,17 +1,17 @@
-V2.0.8 (12/15/2024)
+# V2.0.8 (12/15/2024)
 - Fixed Issue: Container name was using the wrong account name.
 - New Feature: Added account name and id to the banner.
 - New Feature: Added role to the container name along with account id and account name.
   
-V2.0.7 (11/02/2024)
+# V2.0.7 (11/02/2024)
 - Fixed Issue: Session expiry time/Links for tab/window are missing. 
 
-V2.0.6 (09/28/2024)
+# V2.0.6 (09/28/2024)
 
 - New Feature: Session expiry time on the console and login/accounts page.
 - Fixed Issue: Authentication prompt every time on tab/window open for a account/role after logging into accounts page. 
   
-V2.0.5 (05/11/2024)
+# V2.0.5 (05/11/2024)
 
 - New Feature: Service history is also now added per account along with recent login history.
 
