@@ -6,6 +6,9 @@ let invocationCounter = 0;
 let addingTabandWindowLinks = false;
 const linksInfo = new Set();
 const processedLinks = new Set(); // Keep track of processed links
+
+ // Global variable to store account information
+ let accountInfo = { accountAlias: null, accountId: null };
 // Set debug flag
 const IsDebug = true;
 authenticationComplete = false;
@@ -22,11 +25,18 @@ const serviceMapping = {
 
 document.addEventListener("DOMContentLoaded", (event) => {
   console.log("DOM fully loaded and parsed");
+  if (window.location.href.includes('console.aws.amazon.com/')) {
+    ExtractAccountInfoAndUpdatetitle();
+  }
 });
 
 window.addEventListener("load", (event) => {
   console.log("Page fully loaded");
   browser.runtime.sendMessage({ action: 'SaveCookieExpiryDateTime' });
+ 
+  if (window.location.href.includes('console.aws.amazon.com/')) {
+    ExtractAccountInfoAndUpdatetitle();
+  }
   AppendSessionExpiryTime();
 });
 
@@ -36,9 +46,41 @@ if (document.readyState === "complete") {
   document.addEventListener("readystatechange", (event) => {
       if (document.readyState === "complete") {
           console.log("Document now fully loaded");
+          if (window.location.href.includes('console.aws.amazon.com/')) {
+            ExtractAccountInfoAndUpdatetitle();
+          }
       }
   });
 }
+
+// Function to find the text inside a div within the strong element before a div with specific text using XPath
+function getAccountName(text) {
+  if (IsDebug) console.log("Searching for strong element before div with text:", text);
+  
+  // Create an XPath expression to find the strong element before the div with the specific text
+  const xpath = `//div[contains(text(), '${text}')]/preceding::strong[1]`;
+  if (IsDebug) console.log("XPath expression:", xpath);
+  
+  // Evaluate the XPath expression
+  const result = document.evaluate(xpath, document, null, XPathResult.FIRST_ORDERED_NODE_TYPE, null);
+  if (IsDebug) console.log("XPath evaluation result:", result);
+  
+  // Check if the strong element is found
+  if (result.singleNodeValue) {
+      if (IsDebug) console.log("Strong element found:", result.singleNodeValue);
+      
+      // Find the div inside the strong element
+      const divInsideStrong = result.singleNodeValue.querySelector('div');
+      if (IsDebug) console.log("Div inside strong element:", divInsideStrong);
+      
+      // Return the inner text of the div or null if not found
+      return divInsideStrong ? divInsideStrong.textContent : null;
+  }
+  if (IsDebug) console.log("Strong element not found");
+  return null; // Return null if the strong element is not found
+}
+
+
 
 async function AppendSessionExpiryTime() {
   if (IsDebug) console.log('AppendSessionExpiryTime function called');
@@ -75,8 +117,30 @@ async function AppendSessionExpiryTime() {
               newDiv.style.cssText = "align-items: center; font-size: large; color: red; flex-direction: column; display: flex;";
               targetDiv.appendChild(newDiv);
             }
+
+            if(accountInfo)
+            {
+               // Determine the color based on accountAlias
+               let color = 'red'; // Default color
+               if (/beta|non prod|nonprod|uat/i.test(accountInfo.accountAlias)) {
+                   color = 'blue';
+               } else if (/prod/i.test(accountInfo.accountAlias)) {
+                   color = 'red';
+               } else if (/sandbox|test|dev/i.test(accountInfo.accountAlias)) {
+                   color = 'green';
+               }
+
+              newDiv.style.color = color;
+              newDiv.textContent = `${accountInfo.accountAlias} / ${accountInfo.accountId} / Session expires in ${formattedTime}`;
+              if(!document.title.startsWith(accountInfo.accountAlias))
+              {
+                document.title = accountInfo.accountAlias + ' - ' + document.title;
+              }
+                
+            }
+            else
             // Update the text content of the new div
-            newDiv.textContent = `Session expires in ${formattedTime}`;
+              newDiv.textContent = `Session expires in ${formattedTime}`;
           } else {
             console.error('Target div not found');
           }
@@ -111,6 +175,9 @@ async function AppendSessionExpiryTime() {
 
 if(window.location.href.includes('.awsapps.com/start/#/') || window.location.href.includes('console.aws.amazon.com'))
 {
+  if (window.location.href.includes('console.aws.amazon.com/')) {
+    ExtractAccountInfoAndUpdatetitle();
+  }
   AppendSessionExpiryTime();
 
   setInterval(AppendSessionExpiryTime, 60000);
@@ -232,7 +299,7 @@ async function createLinksFromStorageEntries() {
             // Add click event listener to handle link click
             serviceLink.addEventListener('click', (event) => {
               event.preventDefault();
-              const containerName = account_id + '-' + cleanAndDecodeContainerName(account_name);
+              const containerName = account_id + '-' + cleanAndDecodeContainerName(account_name)+ '-' + role_name;
               browser.runtime.sendMessage({
                 action: 'copyCookiesAndOpenLink',
                 link: serviceLink.href,
@@ -339,14 +406,15 @@ function extractLoginLinks_And_Add_Tab_And_Window_Urls() {
       
       // Find the parent div element containing the account name
       const account_nameContainer = element.closest('.awsui_child_18582_7onux_145');
+
+      if (IsDebug) console.log('account_nameContainer');
+      if (IsDebug) console.log(account_nameContainer);
       
       // Find the <strong> element with the appropriate class within the parent container
       const account_name_element = account_nameContainer.querySelector('strong');
 
-      // Extract account name from the found element
-      const account_name = account_name_element ? account_name_element.textContent.trim() : '';
-
-      
+      if (IsDebug) console.log('account_name_element');
+      if (IsDebug) console.log(account_name_element);      
 
       if (!account_id || !role_name) {
         console.error('Failed to extract account_id or role_name from href:', href);
@@ -356,11 +424,8 @@ function extractLoginLinks_And_Add_Tab_And_Window_Urls() {
         continue;
       }
 
-      if (IsDebug) {
-        if (IsDebug) console.log('Extracted info:');
-        if (IsDebug) console.log('Account ID:', account_id);
-        if (IsDebug) console.log('Role Name:', role_name);
-      }
+            // Example usage
+      const account_name = getAccountName(account_id);
 
       if (!account_name) {
         console.error('Failed to extract account name from DOM');
@@ -370,10 +435,13 @@ function extractLoginLinks_And_Add_Tab_And_Window_Urls() {
         continue;
       }
 
-      if (IsDebug) {
-        console.log('Account Name:', account_name);
-      }
 
+      if (IsDebug) {
+        if (IsDebug) console.log('Extracted info:');
+        if (IsDebug) console.log('Account ID:', account_id);
+        if (IsDebug) console.log('Role Name:', role_name);
+        if (IsDebug) console.log('Account Name:', account_name);
+      }
       // Add the extracted information to linksInfo set
       linksInfo.add({ href, account_id, account_name, role_name });
 
@@ -400,7 +468,7 @@ function extractLoginLinks_And_Add_Tab_And_Window_Urls() {
 
       newLinkTab.addEventListener('click', (event) => {
         event.preventDefault();
-        const containerName = account_id + '-' + cleanAndDecodeContainerName(account_name);
+        const containerName = account_id + '-' + cleanAndDecodeContainerName(account_name)+ '-' + role_name ;
         browser.runtime.sendMessage({ 
           action: 'copyCookiesAndOpenLink', 
           link: newLinkTab.href, 
@@ -439,7 +507,7 @@ function extractLoginLinks_And_Add_Tab_And_Window_Urls() {
 
       newLinkWindow.addEventListener('click', (event) => {
         event.preventDefault();
-        const containerName = account_id + '-' + cleanAndDecodeContainerName(account_name);
+        const containerName = account_id + '-' + cleanAndDecodeContainerName(account_name)+ '-' + role_name ;
         browser.runtime.sendMessage({ 
           action: 'copyCookiesAndOpenLink', 
           link: newLinkWindow.href, 
@@ -576,66 +644,42 @@ if (isAWSConsoleURL(window.location.href)&& !window.location.href.includes('.aws
 
   }
 
- // Function to update the title and log
- function updateTitleAndAddaccount_nameToLoginInfoOnConsolePages() {
-  if (IsDebug) console.log('updateTitleAndAddaccount_nameToLoginInfoOnConsolePages function called');
-  // Use the 'data-testid' attribute to select the DOM element
-  const elements = document.querySelectorAll('span[data-testid="awsc-nav-account-menu-button"]');
-  if (IsDebug) console.log('Elements found: ', elements.length);
 
-  if (elements.length > 0) {
-    for (const element of elements) {
-      if (IsDebug) console.log('Processing element: ', element);
+// Function to extract accountAlias and accountId from the meta tag
+function ExtractAccountInfoAndUpdatetitle() {
+ 
 
-      // Select the nested span element and get its 'title' attribute
-      const nestedSpan = element.querySelector('span');
-      if (!nestedSpan) { 
-        return
-      }
-      if (IsDebug) console.log('Nested span element: ', nestedSpan);
-
-      const titleAttribute = nestedSpan.getAttribute('title');
-      if (IsDebug) console.log('Title attribute: ', titleAttribute);
-
-      if (titleAttribute) { // Check if the title attribute is not null
-        // Check if the title attribute contains "@" symbol
-        if (titleAttribute.includes('@')) {
-          const account_nameMatch = titleAttribute.match(/@ ([^\s]+)/);
-          if (IsDebug) console.log('Account name match: ', account_nameMatch);
-
-          if (account_nameMatch && account_nameMatch[1]) {
-            const account_name = account_nameMatch[1];
-            if (IsDebug) console.log('Account name: ', account_name);
-
-            document.title = account_name + ' - ' + document.title;
-
-
-            // Append the element's text content with the account name
-            if (!element.textContent.includes(account_name)) {
-              element.textContent = element.textContent + ' ' + account_name;
-              if (IsDebug) console.log('Element text content updated: ' + element.textContent);
-            }
-
-          } else {
-            console.warn('Account name not found in title attribute');
-          }
+  if(accountInfo && accountInfo.accountAlias)
+    {
+      if(!document.title.startsWith(accountInfo.accountAlias))
+        {
+          document.title = accountInfo.accountAlias + ' - ' + document.title;
         }
-      }
+      return;
     }
-  } else {
-    console.warn('No elements found with the specified data-testid');
-  }
+    // Find the meta tag with the name "awsc-session-data"
+    const metaTag = document.querySelector('meta[name="awsc-session-data"]');
+    if (IsDebug) console.log("Meta tag found:", metaTag);
+
+    if (metaTag) {
+        // Parse the content attribute as JSON
+        const sessionData = JSON.parse(metaTag.getAttribute('content').replace(/&quot;/g, '"'));
+        if (IsDebug) console.log("Parsed session data:", sessionData);
+
+        // Extract accountAlias and accountId
+        accountInfo.accountAlias = sessionData.accountAlias;
+        accountInfo.accountId = sessionData.accountId;
+
+        if (IsDebug) console.log("Account Alias:", accountInfo.accountAlias);
+        if (IsDebug) console.log("Account ID:", accountInfo.accountId);
+
+        if(!document.title.startsWith(accountInfo.accountAlias))
+          {
+            document.title = accountInfo.accountAlias + ' - ' + document.title;
+          }
+
+    } else {
+        if (IsDebug) console.log("Meta tag not found");      
+    }
 }
 
-
-    // Check if the current URL contains "console.aws.amazon.com/"
-    if (window.location.href.includes('console.aws.amazon.com/')) {
-     
-      updateTitleAndAddaccount_nameToLoginInfoOnConsolePages();
-  
-      // Use a MutationObserver to monitor DOM changes
-      const observer = new MutationObserver(updateTitleAndAddaccount_nameToLoginInfoOnConsolePages);
-  
-      const config = { childList: true, subtree: true };
-      observer.observe(document, config);
-    }

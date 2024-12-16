@@ -419,6 +419,12 @@ browser.runtime.onMessage.addListener(async (message, sender, sendResponse) => {
         console.error('Error saving console service link:', error);
       }
     }
+    else  if (message.action === 'getContainerName') {
+        let [tab] = await browser.tabs.query({active: true, currentWindow: true});
+        let identity = await browser.contextualIdentities.get(tab.cookieStoreId);
+        sendResponse({containerName: identity.name});
+        return true; // Keep the message channel open for sendResponse
+    }
 
   });
 
