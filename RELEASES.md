@@ -1,3 +1,8 @@
+V2.0.8 (12/15/2024)
+- Fixed Issue: Container name was using the wrong account name.
+- New Feature: Added account name and id to the banner.
+- New Feature: Added role to the container name along with account id and account name.
+  
 V2.0.7 (11/02/2024)
 - Fixed Issue: Session expiry time/Links for tab/window are missing. 
 
