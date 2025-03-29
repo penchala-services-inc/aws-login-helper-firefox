@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Options</title>
+  <style>
+    .container {
+      display: flex;
+      align-items: center;
+      margin-bottom: 8px;
+      padding: 10px;
+    }
+    label {
+      margin-right: 10px;
+    }
+    input[type="text"] {
+      padding: 5px;
+      width: 200px;
+      margin-right: 10px;
+    }
+    .button-container {
+      display: flex;
+      gap: 10px;
+      margin-top: 10px;
+      padding: 10px;
+      justify-content: flex-end;
+    }
+    button {
+      padding: 5px 10px;
+      font-size: 14px;
+    }
+    .info {
+      margin-top: 10px;
+      padding: 10px;
+      font-size: 14px;
+      color: red;
+    }
+  </style>
+</head>
+<body>
+  <h1>Options</h1>
+  <div class="container">
+    <label for="default-region">Default Region:</label>
+    <input type="text" id="default-region" value="us-east-2">
+  </div>
+  <div class="container">
+    <label for="enable-debug">Enable Debug Logs:</label>
+    <input type="checkbox" id="enable-debug">
+  </div>
+  <div class="info">
+    Changes will apply on new tabs, windows, or after a page reload.
+  </div>
+  <div class="button-container">
+    <button id="save">Save</button>
+    <button id="close">Close</button>
+  </div>
+
+  <script src="options.js"></script>
+</body>
+</html>

@@ -1,0 +1,54 @@
+# 3.0.0 (03/30/2025)
+- Added the ability to set the region for console pages.
+- Added the role name to the banner.
+- Changed the container names to have | for clear separatation between account id, name and role.
+- Changed the recent info to have | for clear separatation between account id, name and role.
+
+# V2.0.9 (12/22/2024)
+- Fixed the issue of not showing the links to open in tabs/windows, refactored the way account name is extracted from DOM to be more stable.
+
+# V2.0.8 (12/15/2024)
+- Fixed Issue: Container name was using the wrong account name.
+- New Feature: Added account name and id to the banner.
+- New Feature: Added role to the container name along with account id and account name.
+  
+# V2.0.7 (11/02/2024)
+- Fixed Issue: Session expiry time/Links for tab/window are missing. 
+
+# V2.0.6 (09/28/2024)
+
+- New Feature: Session expiry time on the console and login/accounts page.
+- Fixed Issue: Authentication prompt every time on tab/window open for a account/role after logging into accounts page. 
+  
+# V2.0.5 (05/11/2024)
+
+- New Feature: Service history is also now added per account along with recent login history.
+
+# V2.0.4 (04/21/2024)
+
+- Fixed Issue: Account name not showing next to the role and user info on the console pages.
+  
+# V2.0.3 (04/06/2024)
+
+- Fixed Issue: Cotainer Tab and Window links not showing up as AWS changed the class name for account name.
+  
+# V2.0.2 (03/30/2024)
+
+- Fixed Issue: Tab and Windows links not showing up when using search feature.
+
+# V2.0.1 (03/24/2024)
+
+- Users can now avoid the mundane task of reopening console pages by remaining on the same page after clicking the reload button in the AWS console, post re-authentication from the AWS IIC page after session expiration, significantly boosting productivity.
+
+# V2.0.0 (03/16/2024)
+
+- Added support for the new aws apps page AWS released on 3/25/2024.
+- Added Recent 5 Logins feature to easily log into the accounts/roles that you have recently without finding the account and role.
+
+# V1.0.1 (11/12/2023)
+
+- Removed permission to read data from all websites and only allow aws console and apps sites.
+
+# V1.0.0 (11/4/2023)
+
+- Initial Release
